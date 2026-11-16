@@ -74,7 +74,11 @@ final class PlayerService: ObservableObject {
     }
 
     func toggle() {
-        isPlaying ? pause() : resume()
+        if isPlaying {
+            pause()
+        } else {
+            resume()
+        }
     }
 
     func stop() {

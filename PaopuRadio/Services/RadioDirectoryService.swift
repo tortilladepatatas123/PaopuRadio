@@ -56,7 +56,10 @@ struct StationDTO: Decodable, Sendable {
             name: trimmedName,
             streamURL: url,
             faviconURL: favicon.flatMap { $0.isEmpty ? nil : URL(string: $0) },
-            tags: (tags ?? "").split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty },
+            tags: (tags ?? "")
+                .split(separator: ",")
+                .map { $0.trimmingCharacters(in: .whitespaces) }
+                .filter { !$0.isEmpty },
             countryCode: countryCode.flatMap { $0.isEmpty ? nil : $0 },
             language: language.flatMap { $0.isEmpty ? nil : $0 },
             codec: codec.flatMap { $0.isEmpty ? nil : $0 },
