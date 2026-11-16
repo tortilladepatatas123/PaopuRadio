@@ -1,0 +1,65 @@
+name: PaopuRadio
+
+options:
+  bundleIdPrefix: com.paopu
+  deploymentTarget:
+    iOS: "16.0"
+  xcodeVersion: "26.0"
+  createIntermediateGroups: true
+
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    SWIFT_STRICT_CONCURRENCY: complete
+    IPHONEOS_DEPLOYMENT_TARGET: "16.0"
+    TARGETED_DEVICE_FAMILY: "1"
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+
+targets:
+  PaopuRadio:
+    type: application
+    platform: iOS
+    sources:
+      - path: PaopuRadio
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.paopu.app
+        PRODUCT_NAME: PaopuRadio
+        GENERATE_INFOPLIST_FILE: NO
+    info:
+      path: PaopuRadio/Resources/Info.plist
+      properties:
+        CFBundleDisplayName: Paopu Radio
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+        UIBackgroundModes:
+          - audio
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+        # Solo medios: algunos streams son HTTP plano. ATS sigue activo para el resto.
+        NSAppTransportSecurity:
+          NSAllowsArbitraryLoadsForMedia: true
+
+  PaopuRadioTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: PaopuRadioTests
+    dependencies:
+      - target: PaopuRadio
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.paopu.app.tests
+        GENERATE_INFOPLIST_FILE: YES
+
+# Esquema explícito para que `xcodebuild test -scheme PaopuRadio` ejecute las pruebas.
+schemes:
+  PaopuRadio:
+    build:
+      targets:
+        PaopuRadio: all
+    test:
+      targets:
+        - PaopuRadioTests
