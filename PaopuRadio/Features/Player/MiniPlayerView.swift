@@ -43,13 +43,13 @@ struct MiniPlayerContent: View {
     }
 
     private var title: String {
-        player.metadata.title ?? player.current?.name ?? "No se está reproduciendo"
+        player.metadata.title ?? player.current?.displayName ?? "No se está reproduciendo"
     }
 
     /// Con tema identificado: el artista (o la emisora). Si no, el estado.
     private var subtitle: String {
         guard player.hasSong else { return player.state.label }
-        return player.metadata.artist ?? player.current?.name ?? ""
+        return player.metadata.artist ?? player.current?.displayName ?? ""
     }
 }
 

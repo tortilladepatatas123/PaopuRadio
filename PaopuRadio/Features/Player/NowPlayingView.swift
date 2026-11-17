@@ -49,19 +49,24 @@ struct NowPlayingView: View {
             Color.clear.frame(width: 36, height: 36)
             VStack(spacing: 4) {
                 MarqueeText(
-                    text: player.metadata.title ?? station.name,
+                    text: player.metadata.title ?? station.displayName,
                     font: .title3.bold(),
                     color: .white,
                     alignment: .center,
                     fps: 60
                 )
-                MarqueeText(
-                    text: subtitle(station),
-                    font: .body,
-                    color: Color.white.opacity(0.75),
-                    alignment: .center,
-                    fps: 60
-                )
+                if player.hasSong {
+                    MarqueeText(
+                        text: player.metadata.artist ?? station.displayName,
+                        font: .body,
+                        color: Color.white.opacity(0.75),
+                        alignment: .center,
+                        fps: 60
+                    )
+                } else {
+                    // Mantiene el alto para que nada se mueva cuando llega un tema.
+                    Color.clear.frame(height: 22)
+                }
             }
             .frame(maxWidth: .infinity)
             Button {
@@ -75,12 +80,6 @@ struct NowPlayingView: View {
             .buttonStyle(.plain)
             .accessibilityLabel(isFavorite ? "Quitar de favoritos" : "Añadir a favoritos")
         }
-    }
-
-    /// Con tema identificado: artista (o emisora). Si no, los datos técnicos de la emisora.
-    private func subtitle(_ station: Station) -> String {
-        guard player.hasSong else { return station.detailText }
-        return player.metadata.artist ?? station.name
     }
 
     /// En una radio no hay duración: la barra va llena y un icono de emisión en el centro indica el directo.
@@ -134,7 +133,6 @@ struct NowPlayingView: View {
             InfoCard(title: "Códec", value: station.codec ?? "—")
             InfoCard(title: "Bitrate", value: station.bitrate.map { "\($0) kbps" } ?? "—")
             InfoCard(title: "País", value: station.countryCode ?? "—")
-            InfoCard(title: "Idioma", value: station.language?.capitalized ?? "—")
         }
     }
 }

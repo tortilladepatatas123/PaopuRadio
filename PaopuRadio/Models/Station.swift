@@ -15,4 +15,11 @@ struct Station: Identifiable, Codable, Hashable, Sendable {
     var language: String?
     var codec: String?
     var bitrate: Int?
+    /// Nombre elegido por el usuario (solo en favoritas).
+    var customName: String?
+    /// Archivo del icono elegido por el usuario (solo en favoritas).
+    var customIconFile: String?
+
+    /// Nombre que se muestra, dentro y fuera de la app.
+    var displayName: String { customName ?? name }
 }

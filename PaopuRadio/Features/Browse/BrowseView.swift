@@ -7,6 +7,7 @@ import SwiftUI
 struct BrowseView: View {
     @StateObject private var viewModel = BrowseViewModel()
     @EnvironmentObject private var player: PlayerService
+    @EnvironmentObject private var favorites: FavoritesStore
     /// País elegido; se guarda y se recupera al abrir la app. Vacío = todos.
     @AppStorage("countryFilter") private var country = ""
     @State private var showCountries = false
@@ -19,7 +20,7 @@ struct BrowseView: View {
     var body: some View {
         List {
             ForEach(viewModel.stations) { station in
-                Button { player.play(station) } label: { StationRow(station: station) }
+                Button { player.play(favorites.resolved(station)) } label: { StationRow(station: station) }
                     .buttonStyle(.plain)
                     .onAppear {
                         if station.id == viewModel.stations.last?.id {
@@ -39,7 +40,7 @@ struct BrowseView: View {
             }
         }
         .listStyle(.plain)
-        .navigationTitle("Explorar")
+        .navigationTitle("Descubrir")
         .searchable(text: $viewModel.query, prompt: "Buscar emisoras")
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {

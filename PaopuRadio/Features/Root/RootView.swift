@@ -13,7 +13,7 @@ struct RootView: View {
             NavigationStack { FavoritesView() }
                 .miniPlayerInset()
                 .tabItem { Label("Favoritos", systemImage: "star") }
-            NavigationStack { BrowseView() }
+            NavigationStack { ExploreView() }
                 .miniPlayerInset()
                 .tabItem { Label("Explorar", systemImage: "dot.radiowaves.left.and.right") }
         }

@@ -5,7 +5,7 @@
 import AVKit
 import SwiftUI
 
-/// Carátula: la que envía la emisora en los metadatos o, si no hay, su logo (con un icono propio mientras carga).
+/// Carátula: la de los metadatos, si la hay; si no, el icono elegido por el usuario o el logo de la emisora.
 struct StationArtwork: View {
     let station: Station?
     var image: UIImage?
@@ -14,14 +14,15 @@ struct StationArtwork: View {
     var body: some View {
         GeometryReader { geo in
             let side = min(geo.size.width, geo.size.height)
+            let custom = image ?? StationIconStore.image(named: station?.customIconFile)
             ZStack {
                 Rectangle().fill(Color(.secondarySystemFill))
-                if let image {
+                if let image = custom {
                     Image(uiImage: image).resizable().scaledToFill()
                 } else {
                     AsyncImage(url: station?.faviconURL) { phase in
                         if let loaded = phase.image {
-                            loaded.resizable().scaledToFit().padding(side * 0.12)
+                            loaded.resizable().scaledToFill()
                         } else {
                             Image(systemName: "dot.radiowaves.left.and.right")
                                 .resizable()
@@ -49,7 +50,7 @@ struct StationRow: View {
                 .frame(width: 48, height: 48)
 
             VStack(alignment: .leading, spacing: 2) {
-                MarqueeText(text: station.name, font: .headline)
+                MarqueeText(text: station.displayName, font: .headline)
                 MarqueeText(text: station.detailText, font: .subheadline, color: .secondary)
             }
         }

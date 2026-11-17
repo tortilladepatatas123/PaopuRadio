@@ -51,7 +51,7 @@ final class MetadataReceiver: NSObject, AVPlayerItemMetadataOutputPushDelegate, 
                 result.title = parsed.title
                 result.artist = result.artist ?? parsed.artist
             } else if Self.artistIDs.contains(identifier), let raw = item.stringValue {
-                result.artist = Self.clean(raw)
+                result.artist = Self.normalizeArtists(raw)
             } else if Self.artworkIDs.contains(identifier), let data = item.dataValue {
                 result.artwork = data
             }
@@ -74,11 +74,20 @@ final class MetadataReceiver: NSObject, AVPlayerItemMetadataOutputPushDelegate, 
         return text.isEmpty ? nil : text
     }
 
+    /// Separa los artistas por coma o punto y coma y los une como "Artista A, Artista B",
+    /// aunque la emisora los envíe pegados ("Artista A,Artista B") o con espacios de más.
+    static func normalizeArtists(_ raw: String) -> String? {
+        let names = raw
+            .split(whereSeparator: { $0 == "," || $0 == ";" })
+            .compactMap { clean(String($0)) }
+        return names.isEmpty ? nil : names.joined(separator: ", ")
+    }
+
     /// Casi todas las emisoras envían "Artista - Título" en un solo campo.
     static func parse(_ raw: String) -> (title: String?, artist: String?) {
         guard let text = clean(raw) else { return (nil, nil) }
         guard let range = text.range(of: " - ") else { return (text, nil) }
-        let artist = clean(String(text[..<range.lowerBound]))
+        let artist = normalizeArtists(String(text[..<range.lowerBound]))
         let title = clean(String(text[range.upperBound...]))
         return (title ?? text, title == nil ? nil : artist)
     }
@@ -208,11 +217,20 @@ final class PlayerService: ObservableObject {
         updateNowPlaying()
     }
 
-    /// Descarga el logo de la emisora para usarlo como carátula cuando el stream no envía una.
+    /// Aplica los cambios de nombre o icono de la emisora que está sonando.
+    func refresh(_ station: Station) {
+        guard current?.id == station.id else { return }
+        current = station
+        loadLogo(for: station)
+        updateNowPlaying()
+    }
+
+    /// Carátula de reserva para el sistema (cuando el stream no envía una): el icono elegido por
+    /// el usuario o, si no hay, el logo de la emisora, que se descarga.
     private func loadLogo(for station: Station) {
         logoTask?.cancel()
-        logoImage = nil
-        guard let url = station.faviconURL else { return }
+        logoImage = StationIconStore.image(named: station.customIconFile)
+        guard logoImage == nil, let url = station.faviconURL else { return }
         logoTask = Task {
             let result = try? await URLSession.shared.data(from: url)
             guard !Task.isCancelled, current?.id == station.id,
@@ -236,7 +254,7 @@ final class PlayerService: ObservableObject {
     }
 
     private func itemFailed() {
-        logger.error("Fallo al reproducir \(self.current?.name ?? "?", privacy: .public)")
+        logger.error("Fallo al reproducir \(self.current?.displayName ?? "?", privacy: .public)")
         state = .failed
         updateNowPlaying()
     }
@@ -271,9 +289,9 @@ final class PlayerService: ObservableObject {
     private func updateNowPlaying() {
         guard let station = current else { return }
         var info: [String: Any] = [
-            MPMediaItemPropertyTitle: metadata.title ?? station.name,
-            MPMediaItemPropertyArtist: hasSong ? (metadata.artist ?? station.name) : "Paopu Radio",
-            MPMediaItemPropertyAlbumTitle: station.name,
+            MPMediaItemPropertyTitle: metadata.title ?? station.displayName,
+            MPMediaItemPropertyArtist: hasSong ? (metadata.artist ?? station.displayName) : "Paopu Radio",
+            MPMediaItemPropertyAlbumTitle: station.displayName,
             MPNowPlayingInfoPropertyIsLiveStream: true,
             MPNowPlayingInfoPropertyPlaybackRate: state == .playing ? 1.0 : 0.0
         ]
