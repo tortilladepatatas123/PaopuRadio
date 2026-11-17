@@ -7,6 +7,14 @@ import SwiftUI
 struct BrowseView: View {
     @StateObject private var viewModel = BrowseViewModel()
     @EnvironmentObject private var player: PlayerService
+    /// País elegido; se guarda y se recupera al abrir la app. Vacío = todos.
+    @AppStorage("countryFilter") private var country = ""
+    @State private var showCountries = false
+
+    private struct SearchKey: Equatable {
+        let text: String
+        let country: String
+    }
 
     var body: some View {
         List {
@@ -33,13 +41,23 @@ struct BrowseView: View {
         .listStyle(.plain)
         .navigationTitle("Explorar")
         .searchable(text: $viewModel.query, prompt: "Buscar emisoras")
-        .task(id: viewModel.query) {
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button { showCountries = true } label: {
+                    Label(country.isEmpty ? "País" : country, systemImage: "globe")
+                }
+            }
+        }
+        .sheet(isPresented: $showCountries) {
+            CountryPickerView(selection: $country)
+        }
+        .task(id: SearchKey(text: viewModel.query, country: country)) {
             // Espera breve al teclear; la carga inicial (búsqueda vacía) es inmediata.
             if !viewModel.query.isEmpty {
                 try? await Task.sleep(nanoseconds: 300_000_000)
                 guard !Task.isCancelled else { return }
             }
-            await viewModel.reload()
+            await viewModel.reload(country: country)
         }
     }
 }

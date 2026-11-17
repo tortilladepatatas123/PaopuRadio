@@ -4,31 +4,30 @@
 
 import SwiftUI
 
-/// Contenido del mini reproductor, sin fondo: logo, nombre, estado y reproducir/pausa.
+/// Contenido del mini reproductor, sin fondo: carátula, tema, artista y reproducir/pausa.
 struct MiniPlayerContent: View {
     @EnvironmentObject private var player: PlayerService
 
     var body: some View {
         HStack(spacing: 12) {
-            StationArtwork(station: player.current, cornerRadius: 5)
+            StationArtwork(station: player.current, image: player.artwork, cornerRadius: 5)
                 .frame(width: 30, height: 30)
 
             VStack(alignment: .leading, spacing: 1) {
-                Text(player.current?.name ?? "No se está reproduciendo")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(player.current == nil ? Color.secondary : Color.primary)
-                    .lineLimit(1)
+                MarqueeText(
+                    text: title,
+                    font: .subheadline.weight(.semibold),
+                    color: player.current == nil ? Color.secondary : Color.primary
+                )
                 if player.current != nil {
-                    Text(player.state.label).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                    MarqueeText(text: subtitle, font: .caption, color: .secondary)
                 }
             }
-            Spacer(minLength: 0)
 
             Button {
                 player.toggle()
             } label: {
-                Image(systemName: player.isPlaying ? "pause.fill" : "play.fill")
-                    .font(.system(size: 22))
+                PlayPauseIcon(isPlaying: player.isPlaying, size: 22)
                     .frame(width: 40, height: 40)
             }
             .buttonStyle(PressableButtonStyle())
@@ -41,6 +40,16 @@ struct MiniPlayerContent: View {
         .onTapGesture {
             if player.current != nil { player.showNowPlaying = true }
         }
+    }
+
+    private var title: String {
+        player.metadata.title ?? player.current?.name ?? "No se está reproduciendo"
+    }
+
+    /// Con tema identificado: el artista (o la emisora). Si no, el estado.
+    private var subtitle: String {
+        guard player.hasSong else { return player.state.label }
+        return player.metadata.artist ?? player.current?.name ?? ""
     }
 }
 

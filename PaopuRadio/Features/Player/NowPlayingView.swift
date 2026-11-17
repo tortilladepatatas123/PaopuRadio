@@ -28,7 +28,7 @@ struct NowPlayingView: View {
 
     private func content(_ station: Station) -> some View {
         VStack(spacing: 20) {
-            StationArtwork(station: station, cornerRadius: 10)
+            StationArtwork(station: station, image: player.artwork, cornerRadius: 10)
                 .aspectRatio(1, contentMode: .fit)
                 .shadow(color: Color.black.opacity(0.35), radius: 18, y: 10)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -48,11 +48,20 @@ struct NowPlayingView: View {
         return HStack {
             Color.clear.frame(width: 36, height: 36)
             VStack(spacing: 4) {
-                Text(station.name).font(.title3.bold()).lineLimit(1)
-                Text(station.detailText)
-                    .font(.body)
-                    .foregroundStyle(Color.white.opacity(0.75))
-                    .lineLimit(1)
+                MarqueeText(
+                    text: player.metadata.title ?? station.name,
+                    font: .title3.bold(),
+                    color: .white,
+                    alignment: .center,
+                    fps: 60
+                )
+                MarqueeText(
+                    text: subtitle(station),
+                    font: .body,
+                    color: Color.white.opacity(0.75),
+                    alignment: .center,
+                    fps: 60
+                )
             }
             .frame(maxWidth: .infinity)
             Button {
@@ -66,6 +75,12 @@ struct NowPlayingView: View {
             .buttonStyle(.plain)
             .accessibilityLabel(isFavorite ? "Quitar de favoritos" : "Añadir a favoritos")
         }
+    }
+
+    /// Con tema identificado: artista (o emisora). Si no, los datos técnicos de la emisora.
+    private func subtitle(_ station: Station) -> String {
+        guard player.hasSong else { return station.detailText }
+        return player.metadata.artist ?? station.name
     }
 
     /// En una radio no hay duración: la barra va llena y debajo se indica el estado.
@@ -94,8 +109,7 @@ struct NowPlayingView: View {
             Button {
                 player.toggle()
             } label: {
-                Image(systemName: player.isPlaying ? "pause.fill" : "play.fill")
-                    .font(.system(size: 46))
+                PlayPauseIcon(isPlaying: player.isPlaying, size: 46)
                     .frame(width: 64, height: 64)
             }
             .frame(maxWidth: .infinity)

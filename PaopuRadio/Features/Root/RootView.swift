@@ -10,12 +10,12 @@ struct RootView: View {
 
     var body: some View {
         TabView {
-            NavigationStack { BrowseView() }
-                .miniPlayerInset()
-                .tabItem { Label("Explorar", systemImage: "dot.radiowaves.left.and.right") }
             NavigationStack { FavoritesView() }
                 .miniPlayerInset()
                 .tabItem { Label("Favoritos", systemImage: "star") }
+            NavigationStack { BrowseView() }
+                .miniPlayerInset()
+                .tabItem { Label("Explorar", systemImage: "dot.radiowaves.left.and.right") }
         }
         .miniPlayerAccessory()
         .sheet(isPresented: $player.showNowPlaying) {

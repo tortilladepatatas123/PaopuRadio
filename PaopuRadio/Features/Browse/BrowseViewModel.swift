@@ -16,17 +16,20 @@ final class BrowseViewModel: ObservableObject {
     private var offset = 0
     private var reachedEnd = false
     private var generation = 0
+    private var countryCode: String?
 
     init(service: any RadioDirectoryService = RadioBrowserService()) {
         self.service = service
     }
 
-    /// Reinicia la lista (p. ej. al cambiar la búsqueda) y carga la primera página.
-    func reload() async {
+    /// Reinicia la lista (al cambiar la búsqueda o el país) y carga la primera página.
+    /// `country` vacío = todos los países.
+    func reload(country: String) async {
         generation += 1
         offset = 0
         reachedEnd = false
         isLoading = false
+        countryCode = country.isEmpty ? nil : country
         stations = []
         await loadMore()
     }
@@ -40,7 +43,8 @@ final class BrowseViewModel: ObservableObject {
         defer { if current == generation { isLoading = false } }
 
         do {
-            let page = try await service.search(StationQuery(name: query), limit: pageSize, offset: offset)
+            let search = StationQuery(name: query, countryCode: countryCode)
+            let page = try await service.search(search, limit: pageSize, offset: offset)
             guard current == generation else { return }
             stations += page
             offset += pageSize

@@ -5,28 +5,35 @@
 import AVKit
 import SwiftUI
 
-/// Logo de la emisora con un icono propio mientras carga o si no tiene.
+/// Carátula: la que envía la emisora en los metadatos o, si no hay, su logo (con un icono propio mientras carga).
 struct StationArtwork: View {
     let station: Station?
+    var image: UIImage?
     var cornerRadius: CGFloat = 8
 
     var body: some View {
         GeometryReader { geo in
-            let inset = min(geo.size.width, geo.size.height) * 0.12
+            let side = min(geo.size.width, geo.size.height)
             ZStack {
                 Rectangle().fill(Color(.secondarySystemFill))
-                AsyncImage(url: station?.faviconURL) { phase in
-                    if let image = phase.image {
-                        image.resizable().scaledToFit().padding(inset)
-                    } else {
-                        Image(systemName: "dot.radiowaves.left.and.right")
-                            .resizable()
-                            .scaledToFit()
-                            .foregroundStyle(.secondary)
-                            .padding(min(geo.size.width, geo.size.height) * 0.28)
+                if let image {
+                    Image(uiImage: image).resizable().scaledToFill()
+                } else {
+                    AsyncImage(url: station?.faviconURL) { phase in
+                        if let loaded = phase.image {
+                            loaded.resizable().scaledToFit().padding(side * 0.12)
+                        } else {
+                            Image(systemName: "dot.radiowaves.left.and.right")
+                                .resizable()
+                                .scaledToFit()
+                                .foregroundStyle(.secondary)
+                                .padding(side * 0.28)
+                        }
                     }
                 }
             }
+            .frame(width: geo.size.width, height: geo.size.height)
+            .clipped()
         }
         .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
     }
@@ -42,10 +49,9 @@ struct StationRow: View {
                 .frame(width: 48, height: 48)
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(station.name).font(.headline).lineLimit(1)
-                Text(station.detailText).font(.subheadline).foregroundStyle(.secondary).lineLimit(1)
+                MarqueeText(text: station.name, font: .headline)
+                MarqueeText(text: station.detailText, font: .subheadline, color: .secondary)
             }
-            Spacer(minLength: 0)
         }
         .contentShape(Rectangle())
         .accessibilityElement(children: .combine)
@@ -53,20 +59,43 @@ struct StationRow: View {
 }
 
 extension Station {
-    /// País, códec y bitrate en una línea.
+    /// País, códec y bitrate en una línea, separados por viñetas.
     var detailText: String {
         [countryCode, codec, bitrate.map { "\($0) kbps" }]
             .compactMap { $0 }
-            .joined(separator: " · ")
+            .joined(separator: " • ")
     }
 }
 
-/// Botón que se encoge un poco al pulsarlo.
+/// Icono de reproducir/pausar con transición animada: uno gira y se encoge mientras el otro entra.
+struct PlayPauseIcon: View {
+    let isPlaying: Bool
+    var size: CGFloat = 24
+
+    var body: some View {
+        ZStack {
+            Image(systemName: "pause.fill")
+                .scaleEffect(isPlaying ? 1 : 0.4)
+                .rotationEffect(.degrees(isPlaying ? 0 : -90))
+                .opacity(isPlaying ? 1 : 0)
+
+            Image(systemName: "play.fill")
+                .scaleEffect(isPlaying ? 0.4 : 1)
+                .rotationEffect(.degrees(isPlaying ? 90 : 0))
+                .opacity(isPlaying ? 0 : 1)
+        }
+        .font(.system(size: size))
+        .animation(.spring(response: 0.32, dampingFraction: 0.7), value: isPlaying)
+    }
+}
+
+/// Botón sin estilo propio que se encoge un poco al pulsarlo.
 struct PressableButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .scaleEffect(configuration.isPressed ? 0.88 : 1)
-            .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
+            .opacity(configuration.isPressed ? 0.8 : 1)
+            .animation(.spring(response: 0.25, dampingFraction: 0.7), value: configuration.isPressed)
     }
 }
 
