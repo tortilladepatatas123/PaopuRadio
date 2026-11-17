@@ -83,21 +83,21 @@ struct NowPlayingView: View {
         return player.metadata.artist ?? station.name
     }
 
-    /// En una radio no hay duración: la barra va llena y debajo se indica el estado.
+    /// En una radio no hay duración: la barra va llena y un icono de emisión en el centro indica el directo.
     private var liveBar: some View {
-        VStack(spacing: 6) {
-            Capsule()
-                .fill(Color.white.opacity(player.state == .playing ? 0.9 : 0.3))
-                .frame(height: 6)
-                .animation(.easeInOut(duration: 0.3), value: player.state)
-            HStack {
-                Text("EN DIRECTO")
-                Spacer()
-                Text(player.state.label)
-            }
-            .font(.caption.monospacedDigit())
-            .foregroundStyle(Color.white.opacity(0.7))
+        let level = player.state == .playing ? 0.9 : 0.3
+
+        return HStack(spacing: 12) {
+            Capsule().fill(Color.white.opacity(level)).frame(height: 6)
+            Image(systemName: "dot.radiowaves.left.and.right")
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundStyle(Color.white.opacity(level))
+            Capsule().fill(Color.white.opacity(level)).frame(height: 6)
         }
+        .frame(height: 28)
+        .animation(.easeInOut(duration: 0.3), value: player.state)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("En directo")
     }
 
     private var controls: some View {
