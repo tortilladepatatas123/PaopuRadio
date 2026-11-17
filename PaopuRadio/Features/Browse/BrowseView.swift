@@ -43,33 +43,3 @@ struct BrowseView: View {
         }
     }
 }
-
-private struct StationRow: View {
-    let station: Station
-
-    var body: some View {
-        HStack(spacing: 12) {
-            AsyncImage(url: station.faviconURL) { image in
-                image.resizable().scaledToFit()
-            } placeholder: {
-                Image(systemName: "dot.radiowaves.left.and.right")
-                    .foregroundStyle(.secondary)
-            }
-            .frame(width: 44, height: 44)
-            .background(.quaternary, in: RoundedRectangle(cornerRadius: 8))
-            .clipShape(RoundedRectangle(cornerRadius: 8))
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text(station.name).font(.headline).lineLimit(1)
-                Text(subtitle).font(.subheadline).foregroundStyle(.secondary).lineLimit(1)
-            }
-        }
-        .accessibilityElement(children: .combine)
-    }
-
-    private var subtitle: String {
-        [station.countryCode, station.codec, station.bitrate.map { "\($0) kbps" }]
-            .compactMap { $0 }
-            .joined(separator: " · ")
-    }
-}

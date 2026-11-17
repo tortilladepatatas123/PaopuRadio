@@ -1,0 +1,176 @@
+// Paopu Radio — radio por internet para iPhone.
+// Copyright (C) 2026 Paopu Radio contributors.
+// Licencia GPL-3.0-or-later. Consulta el archivo LICENSE.
+
+import SwiftUI
+
+/// Reproductor a pantalla completa: fondo con degradado propio de cada emisora, logo grande,
+/// nombre, favorito, barra "en directo", controles y tarjetas con datos del stream.
+struct NowPlayingView: View {
+    @EnvironmentObject private var player: PlayerService
+    @EnvironmentObject private var favorites: FavoritesStore
+
+    var body: some View {
+        Group {
+            if let station = player.current {
+                content(station)
+            } else {
+                Text("No hay nada en reproducción")
+                    .foregroundStyle(Color.white.opacity(0.7))
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+        }
+        .background { NowPlayingBackground(seed: player.current?.id ?? "") }
+        .foregroundStyle(Color.white)
+        .environment(\.colorScheme, .dark)
+        .preferredColorScheme(.dark)
+    }
+
+    private func content(_ station: Station) -> some View {
+        VStack(spacing: 20) {
+            StationArtwork(station: station, cornerRadius: 10)
+                .aspectRatio(1, contentMode: .fit)
+                .shadow(color: Color.black.opacity(0.35), radius: 18, y: 10)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            titleRow(station)
+            liveBar
+            controls
+            badges(station)
+        }
+        .padding(.horizontal, 24)
+        .padding(.top, 24)
+        .padding(.bottom, 12)
+    }
+
+    private func titleRow(_ station: Station) -> some View {
+        let isFavorite = favorites.isFavorite(station)
+
+        return HStack {
+            Color.clear.frame(width: 36, height: 36)
+            VStack(spacing: 4) {
+                Text(station.name).font(.title3.bold()).lineLimit(1)
+                Text(station.detailText)
+                    .font(.body)
+                    .foregroundStyle(Color.white.opacity(0.75))
+                    .lineLimit(1)
+            }
+            .frame(maxWidth: .infinity)
+            Button {
+                favorites.toggle(station)
+            } label: {
+                Image(systemName: isFavorite ? "star.fill" : "star")
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundStyle(isFavorite ? Color.yellow : Color.white.opacity(0.8))
+                    .frame(width: 36, height: 36)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(isFavorite ? "Quitar de favoritos" : "Añadir a favoritos")
+        }
+    }
+
+    /// En una radio no hay duración: la barra va llena y debajo se indica el estado.
+    private var liveBar: some View {
+        VStack(spacing: 6) {
+            Capsule()
+                .fill(Color.white.opacity(player.state == .playing ? 0.9 : 0.3))
+                .frame(height: 6)
+                .animation(.easeInOut(duration: 0.3), value: player.state)
+            HStack {
+                Text("EN DIRECTO")
+                Spacer()
+                Text(player.state.label)
+            }
+            .font(.caption.monospacedDigit())
+            .foregroundStyle(Color.white.opacity(0.7))
+        }
+    }
+
+    private var controls: some View {
+        HStack {
+            AirPlayButton()
+                .frame(width: 44, height: 44)
+                .frame(maxWidth: .infinity)
+
+            Button {
+                player.toggle()
+            } label: {
+                Image(systemName: player.isPlaying ? "pause.fill" : "play.fill")
+                    .font(.system(size: 46))
+                    .frame(width: 64, height: 64)
+            }
+            .frame(maxWidth: .infinity)
+            .accessibilityLabel(player.isPlaying ? "Pausar" : "Reproducir")
+
+            Button {
+                player.stop()
+            } label: {
+                Image(systemName: "stop.fill")
+                    .font(.system(size: 20, weight: .semibold))
+                    .frame(width: 44, height: 44)
+            }
+            .frame(maxWidth: .infinity)
+            .accessibilityLabel("Detener")
+        }
+        .buttonStyle(PressableButtonStyle())
+        .foregroundStyle(Color.white)
+    }
+
+    private func badges(_ station: Station) -> some View {
+        HStack(spacing: 6) {
+            InfoCard(title: "Códec", value: station.codec ?? "—")
+            InfoCard(title: "Bitrate", value: station.bitrate.map { "\($0) kbps" } ?? "—")
+            InfoCard(title: "País", value: station.countryCode ?? "—")
+            InfoCard(title: "Idioma", value: station.language?.capitalized ?? "—")
+        }
+    }
+}
+
+/// Tarjeta pequeña con un dato del stream.
+private struct InfoCard: View {
+    let title: String
+    let value: String
+
+    var body: some View {
+        VStack(spacing: 2) {
+            Text(value)
+                .font(.system(size: 15, weight: .semibold))
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+            Text(title)
+                .font(.system(size: 11))
+                .foregroundStyle(Color.white.opacity(0.6))
+                .lineLimit(1)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 10)
+        .padding(.horizontal, 2)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(Color.white.opacity(0.12))
+        )
+    }
+}
+
+/// Degradado propio de cada emisora: el tono sale de su identificador, así que siempre es el mismo.
+private struct NowPlayingBackground: View {
+    let seed: String
+
+    private var hue: Double {
+        let sum = seed.unicodeScalars.reduce(0) { ($0 * 31 + Int($1.value)) % 360 }
+        return Double(sum) / 360
+    }
+
+    var body: some View {
+        LinearGradient(
+            colors: [
+                Color(hue: hue, saturation: 0.75, brightness: 0.6),
+                Color(hue: (hue + 0.06).truncatingRemainder(dividingBy: 1), saturation: 0.8, brightness: 0.35),
+                Color(hue: hue, saturation: 0.7, brightness: 0.15)
+            ],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+        .overlay(Color.black.opacity(0.15))
+        .ignoresSafeArea()
+    }
+}

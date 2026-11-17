@@ -9,6 +9,17 @@ import os
 
 enum PlaybackState: Equatable {
     case idle, loading, playing, paused, failed
+
+    /// Texto para mostrar en el reproductor.
+    var label: String {
+        switch self {
+        case .idle: return ""
+        case .loading: return "Conectando…"
+        case .playing: return "En directo"
+        case .paused: return "En pausa"
+        case .failed: return "No se pudo reproducir"
+        }
+    }
 }
 
 /// Fuente de verdad del estado de reproducción. Gestiona AVPlayer, la sesión de audio
@@ -17,6 +28,8 @@ enum PlaybackState: Equatable {
 final class PlayerService: ObservableObject {
     @Published private(set) var current: Station?
     @Published private(set) var state: PlaybackState = .idle
+    /// Controla la hoja del reproductor a pantalla completa.
+    @Published var showNowPlaying = false
 
     private let player = AVPlayer()
     private let logger = Logger(subsystem: "com.paopu.app", category: "player")
@@ -87,6 +100,7 @@ final class PlayerService: ObservableObject {
         itemObserver = nil
         current = nil
         state = .idle
+        showNowPlaying = false
         MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
     }
 

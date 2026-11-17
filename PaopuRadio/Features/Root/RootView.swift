@@ -5,12 +5,24 @@
 import SwiftUI
 
 struct RootView: View {
+    @EnvironmentObject private var player: PlayerService
+    @EnvironmentObject private var favorites: FavoritesStore
+
     var body: some View {
-        NavigationStack {
-            BrowseView()
+        TabView {
+            NavigationStack { BrowseView() }
+                .miniPlayerInset()
+                .tabItem { Label("Explorar", systemImage: "dot.radiowaves.left.and.right") }
+            NavigationStack { FavoritesView() }
+                .miniPlayerInset()
+                .tabItem { Label("Favoritos", systemImage: "star") }
         }
-        .safeAreaInset(edge: .bottom, spacing: 0) {
-            MiniPlayerView()
+        .miniPlayerAccessory()
+        .sheet(isPresented: $player.showNowPlaying) {
+            NowPlayingView()
+                .environmentObject(player)
+                .environmentObject(favorites)
+                .presentationDragIndicator(.visible)
         }
     }
 }
